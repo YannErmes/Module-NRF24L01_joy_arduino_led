@@ -1,0 +1,146 @@
+
+// code arduino recpeteur
+
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <string.h>  // Pour utiliser strcmp()
+
+// Définition des broches pour les LEDs
+int led1 = 4; 
+int led2 = 5; 
+int led3 = 6; 
+int led4 = 7;
+
+// Initialisation du module RF24 (nRF24L01) avec les broches CE et CSN
+RF24 radio(9, 10);
+
+// Adresse de communication entre l'émetteur et le récepteur
+const byte adresse[6] = "00001";
+
+void setup() {
+    Serial.begin(9600); // Initialisation du moniteur série
+    
+    // Configuration du module RF en mode récepteur
+    radio.begin();
+    radio.openReadingPipe(0, adresse); // Ouvre un canal de communication
+    radio.setPALevel(RF24_PA_MIN); // Réduit la puissance pour économiser de l’énergie
+    radio.startListening(); // Active le mode réception
+
+    // Définition des LEDs comme sorties
+    pinMode(led1, OUTPUT);
+    pinMode(led2, OUTPUT);
+    pinMode(led3, OUTPUT);
+    pinMode(led4, OUTPUT);
+}
+
+void loop() {
+    delay(100); // Petite pause pour éviter la surcharge du processeur
+    
+    if (radio.available()) { // Vérifie si un message est reçu
+        char message[32] = ""; // Stocke le message reçu
+        radio.read(&message, sizeof(message)); // Lit le message reçu
+        Serial.print("Message reçu : ");
+        Serial.println(message);
+        
+        // Vérifie le contenu du message et allume la LED correspondante
+        if (strcmp(message, "droite") == 0) {
+            digitalWrite(led1, HIGH);
+        } else if (strcmp(message, "gauche") == 0) {
+            digitalWrite(led2, HIGH);
+        } else if (strcmp(message, "arriere") == 0) {
+            digitalWrite(led3, HIGH);
+        } else if (strcmp(message, "avant") == 0) {
+            digitalWrite(led4, HIGH);
+        } else { // Si aucun message valide, éteindre toutes les LEDs
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            digitalWrite(led4, LOW);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Code pour l'émetteur
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+// Définition des axes du joystick
+#define RX A0  // Axe X
+#define RY A1  // Axe Y
+
+// Initialisation du module RF (nRF24L01)
+RF24 radio(9, 10);
+
+// Adresse de communication
+const byte adresse[6] = "00001";
+
+void setup() {
+    Serial.begin(9600); // Démarrage du moniteur série
+    
+    // Configuration du module RF en mode émetteur
+    radio.begin();
+    radio.openWritingPipe(adresse); // Ouvre un canal d'envoi
+    radio.setPALevel(RF24_PA_MIN); // Réduit la puissance d'émission
+    radio.stopListening(); // Active le mode émission
+    
+    // Définition des axes du joystick comme entrées
+    pinMode(RX, INPUT);
+    pinMode(RY, INPUT);
+}
+
+void loop() {
+    delay(500); // Pause pour éviter l'envoi trop fréquent
+
+    int joyX = analogRead(RX); // Lecture de la position X du joystick
+    int joyY = analogRead(RY); // Lecture de la position Y du joystick
+
+    Serial.print("JoyX: ");
+    Serial.println(joyX);
+    Serial.print("JoyY: ");
+    Serial.println(joyY);
+
+    // Détermine la direction et envoie le message correspondant
+    if (joyX < 300) {
+        // Déplacement vers la gauche
+        char message[] = "gauche";
+        radio.write(&message, sizeof(message));
+        Serial.println("Gauche");
+    } else if (joyX > 700) {
+        // Déplacement vers la droite
+        char message[] = "droite";
+        radio.write(&message, sizeof(message));
+        Serial.println("Droite");
+    } else if (joyY < 400) {
+        // Déplacement vers l'arrière
+        char message[] = "arriere";
+        radio.write(&message, sizeof(message));
+        Serial.println("Arrière");
+    } else if (joyY > 600) {
+        // Déplacement vers l'avant
+        char message[] = "avant";
+        radio.write(&message, sizeof(message));
+        Serial.println("Avant");
+    } else {
+        // Si le joystick est au centre, envoie "stop"
+        char message[] = "stop";
+        radio.write(&message, sizeof(message));
+        Serial.println("Stop");
+    }
+}
+donne moi la liste de materiel pour ce projet
